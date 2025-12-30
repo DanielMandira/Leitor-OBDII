@@ -1,86 +1,69 @@
 import obd
-import connection
+from Services.connection import get_connection, close
 
 
-def verificar_erros():    
-    # Verificar códigos de erro
-    dtc_response = connection.query(obd.commands.GET_DTC)
-    if dtc_response.value:
+def _query(cmd: obd.OBDCommand):
+    conn = get_connection()
+    if not conn:
+        print("Não conectado ao OBD-II.")
+        return None
+    try:
+        return conn.query(cmd)
+    except Exception as e:
+        print(f"Falha na consulta {cmd.name}: {e}")
+        return None
+
+def verificar_erros():
+    dtc_response = _query(obd.commands.GET_DTC)
+    if dtc_response and dtc_response.value:
         print("Códigos de erro encontrados:")
         for code in dtc_response.value:
             print(code)
     else:
         print("Nenhum código de erro encontrado.")
     
-def verificar_status():    
-    # Verificar o status do veículo
-    status_response = connection.query(obd.commands.STATUS)
-    if status_response.value:
+def verificar_status():
+    status_response = _query(obd.commands.STATUS)
+    if status_response and status_response.value:
         print("Status do veículo:")
         print(status_response.value)
     else:
         print("Não foi possível obter o status do veículo.")
 
-def ObterDados():        
-    # Verificar dados do veículo
-    vehicle_data_response = connection.query(obd.commands.ENGINE_RPM)
-    if vehicle_data_response.value:
-        print("Dados do veículo:")
-        print("RPM do motor:", vehicle_data_response.value.magnitude)
+def ObterDados():
+    rpm = _query(obd.commands.ENGINE_RPM)
+    if rpm and rpm.value:
+        print("RPM do motor:", rpm.value.magnitude)
     else:
-        print("Não foi possível obter os dados do veículo.")
+        print("Não foi possível obter RPM do motor.")
 
-
-    # Verificar temperatura do motor
-    temperature_response = connection.query(obd.commands.COOLANT_TEMP)
-    if temperature_response.value:
-        print("Temperatura do motor:", temperature_response.value.magnitude)
+    temp = _query(obd.commands.COOLANT_TEMP)
+    if temp and temp.value:
+        print("Temperatura do motor:", temp.value.magnitude)
     else:
         print("Não foi possível obter a temperatura do motor.")
 
-
-    # Verificar velocidade do veículo
-    speed_response = connection.query(obd.commands.SPEED)
-    if speed_response.value:
-        print("Velocidade do veículo:", speed_response.value.magnitude)
+    speed = _query(obd.commands.SPEED)
+    if speed and speed.value:
+        print("Velocidade do veículo:", speed.value.magnitude)
     else:
         print("Não foi possível obter a velocidade do veículo.")
 
-
-    # Verificar pressão do óleo
-    oil_pressure_response = connection.query(obd.commands.OIL_PRESSURE)
-    if oil_pressure_response.value:
-        print("Pressão do óleo:", oil_pressure_response.value.magnitude)
-    else:
-        print("Não foi possível obter a pressão do óleo.")
-
-
-    # Verificar nível de combustível
-    fuel_level_response = connection.query(obd.commands.FUEL_LEVEL)
-    if fuel_level_response.value:
-        print("Nível de combustível:", fuel_level_response.value.magnitude)
+    fuel = _query(obd.commands.FUEL_LEVEL)
+    if fuel and fuel.value:
+        print("Nível de combustível:", fuel.value.magnitude)
     else:
         print("Não foi possível obter o nível de combustível.")
 
 
-    # Verificar velocidade do veículo
-    speed_response = connection.query(obd.commands.SPEED)
-    if speed_response.value:
-        print("Velocidade do veículo:", speed_response.value.magnitude)
-    else:
-        print("Não foi possível obter a velocidade do veículo.")
-
-
 def apagar_erros():
-    # Apagar os códigos de erro
-    clear_dtc_response = connection.query(obd.commands.CLEAR_DTC)
-    if clear_dtc_response.value:
-        print("Códigos de erro apagados.")
+    resp = _query(obd.commands.CLEAR_DTC)
+    if resp and (resp.value is None or resp.value):
+        print("Códigos de erro apagados (se suportado).")
     else:
         print("Não foi possível apagar os códigos de erro.")
 
 def fechar_conexao():
-    # Fechar a conexão
-    connection.close()
+    close()
     print("Conexão fechada.")
 
